@@ -1,0 +1,40 @@
+<h4 _ngc>Gestión de Entregas de Canastas</h4>
+<br>
+<input [(ngModel)]="searchTerm" class="form-control" id="myInput" type="text" placeholder="Buscar..">
+<button id="toggleFormBtn" class="btn btn-success"><span class="bi bi-file-earmark-plus"></span></button>
+<form id="formBeneficiario" action="#" method="POST" style="display: none;">
+    <label for="name" class="form-control">Nombre:</label>
+    <input type="text" id="name" name="name" required class="form-control">
+
+    <label for="address" class="form-control">Dirección:</label>
+    <input type="text" id="address" name="address" required class="form-control">
+
+    <label for="phone" class="form-control">Teléfono:</label>
+    <input type="tel" id="phone" name="phone" required class="form-control">
+    <button type="button" class="btn btn-outline-success" onclick="alert('Registrado');">Agregar</button>
+    <button type="reset" class="btn btn-outline-danger">Limpiar</button>
+</form>           
+<br>
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+          <th>Voluntario</th><th>Canastas</th><th>Tipo</th><th>Estado</th><th>Acción</th>
+        </tr>
+      </thead>
+    <tbody>
+        <tr *ngFor="let item of filteredData">
+          <td>{{ item.completo }}</td>
+          <td>{{ item.numBeneficiarios }}</td>          
+          <td>{{ item.tipo }}</td>
+          <td>{{ item.estado }}</td>
+          <td>
+            <button class="btn btn-outline-success">
+                <span class="bi bi-box-arrow-in-right"></span>
+            </button>
+            <button  class="btn btn-outline-info">
+                <span class="bi bi-journal-check"></span>
+            </button>
+          </td>
+        </tr>
+    </tbody>
+</table>
