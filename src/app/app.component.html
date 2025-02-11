@@ -1,18 +1,16 @@
-<main _ngc class="main">
-  <div _ngc class="content">
-    <div _ngc class="left-side">
-      <h3>
-        <img src="logoMGR.webp" fill="none" class="angular-logo" height="50"/>
-        Tu Familia es Mi Familia
-        <a (click)="loginSvc.logout()">
-          <img [src]="loginSvc.usr.photoURL" width="50" height="50" />
-        </a>
-      </h3>      
+<header>
+  <img src="logoMGR.webp" fill="none" class="logo" height="50"/>
+  Tu Familia es Mi Familia
+  <a (click)="loginSvc.logout()">
+    <img [src]="loginSvc.usr.photoURL" width="50" height="50" />
+  </a>
+</header>
+<main class="main">
+  <div class="content">
+    <div class="left-side"><app-menu /></div>
+    <div role="separator" aria-label="Divider" class="divider"></div>
+    <div class="right-side">            
       <router-outlet />
-    </div>
-    <div _ngc role="separator" aria-label="Divider" class="divider"></div>
-    <div _ngc class="right-side">
-      <app-menu />
     </div>
   </div>
 </main>

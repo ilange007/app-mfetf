@@ -6,6 +6,7 @@ import { AportantesComponent } from './aportantes/aportantes.component';
 import { EntregasComponent } from './entregas/entregas.component';
 import { BeneficiariosComponent } from './beneficiarios/beneficiarios.component';
 import { CanastaComponent } from './canasta/canasta.component';
+import { DistritosComponent } from './distritos/distritos.component';
 
 export const routes: Routes = [
     { path: '', component: DashboardComponent },  // Ruta por defecto
@@ -15,4 +16,5 @@ export const routes: Routes = [
     { path: 'entregas', component: EntregasComponent },
     { path: 'beneficiarios', component: BeneficiariosComponent },
     { path: 'canasta', component: CanastaComponent },
+    { path: 'distritos', component: DistritosComponent },
 ];

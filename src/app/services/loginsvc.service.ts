@@ -21,8 +21,8 @@ export class LoginsvcService {
     this.usrGoogle.subscribe(user => {
       if(user){
         this.usr.uid+=user?.uid;
-        this.usr.displayName+=user?.displayName;
-        this.usr.email+=user?.email;
+        //this.usr.displayName+=user?.displayName;
+        //this.usr.email+=user?.email;
         this.usr.photoURL="";
         this.usr.photoURL+=user?.photoURL;
       }

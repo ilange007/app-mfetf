@@ -1,4 +1,4 @@
 export class Clinica {
-    name:string="";
+    name:string="Clínica";
     usuarios!:string[];
 }

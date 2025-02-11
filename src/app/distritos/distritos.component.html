@@ -1,0 +1,28 @@
+<!-- Tabla dinámica -->
+<table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th *ngFor="let column of columns" (click)="sort(column)">
+          {{ column | titlecase }}
+          <span *ngIf="sortColumn === column">
+            {{ sortDirection === 'asc' ? '🔼' : '🔽' }}
+          </span>
+        </th>
+        <th>Acción</th> <!-- Columna de acción estática -->
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Mostrar los datos filtrados y ordenados dinámicamente -->
+      <tr *ngFor="let item of filteredData; let i = index">
+        <td *ngFor="let column of columns">
+          {{ item[column] }}
+        </td>
+        <td>
+          <!-- Botones o acciones -->
+          <button class="btn btn-outline-success">
+            <span class="bi bi-box-arrow-in-right"></span>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
