@@ -1,0 +1,69 @@
+<h4>Agregar Persona</h4>
+<form [formGroup]="personaForm" (ngSubmit)="onSubmit()">
+  <label for="nombre">Nombre:</label>
+  <input type="text" id="nombre" formControlName="nombre" class="form-control">
+
+  <label for="paterno">Apellido Paterno:</label>
+  <input type="text" id="paterno" formControlName="paterno" class="form-control">
+
+  <label for="materno">Apellido Materno:</label>
+  <input type="text" id="materno" formControlName="materno" class="form-control">
+
+  <label for="fechaNac">Fecha de Nacimiento:</label>
+  <input type="date" id="fechaNac" formControlName="fechaNac" class="form-control">
+
+  <label for="sexo">Sexo:</label>
+  <input type="text" id="sexo" formControlName="sexo" class="form-control">
+
+  <label for="telefono">Teléfono:</label>
+  <input type="text" id="telefono" formControlName="telefono" class="form-control">
+
+  <label for="direccion">Dirección:</label>
+  <input type="text" id="direccion" formControlName="direccion" class="form-control">
+
+  <label for="correo">Correo:</label>
+  <input type="email" id="correo" formControlName="correo" class="form-control">
+
+  <label for="activo">Activo:</label>
+  <input type="checkbox" id="activo" formControlName="activo" class="form-control">
+
+  <div formArrayName="roles">
+    <h5>Roles</h5>
+    <button type="button" (click)="addRol()">Agregar Rol</button>
+    <div *ngFor="let rol of roles.controls; let i = index" [formGroupName]="i">
+      <label for="rol">Rol:</label>
+      <input type="text" formControlName="rol" class="form-control">
+      <label for="descripcion">Descripción:</label>
+      <input type="text" formControlName="descripcion" class="form-control">
+    </div>
+  </div>
+
+  <div formArrayName="estadosSalud">
+    <h5>Estados de Salud</h5>
+    <button type="button" (click)="addEstadoSalud()">Agregar Estado de Salud</button>
+    <div *ngFor="let estado of estadosSalud.controls; let i = index" [formGroupName]="i">
+      <label for="elemento">Elemento:</label>
+      <input type="text" formControlName="elemento" class="form-control">
+      <label for="valor">Valor:</label>
+      <input type="text" formControlName="valor" class="form-control">
+      <label for="fecha">Fecha:</label>
+      <input type="date" formControlName="fecha" class="form-control">
+      <label for="url">URL:</label>
+      <input type="text" formControlName="url" class="form-control">
+    </div>
+  </div>
+
+  <div formArrayName="habilidades">
+    <h5>Habilidades</h5>
+    <button type="button" (click)="addHabilidad()">Agregar Habilidad</button>
+    <div *ngFor="let habilidad of habilidades.controls; let i = index" [formGroupName]="i">
+      <label for="habilidad">Habilidad:</label>
+      <input type="text" formControlName="habilidad" class="form-control">
+      <label for="descripcion">Descripción:</label>
+      <input type="text" formControlName="descripcion" class="form-control">
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-outline-success">Agregar</button>
+  <button type="reset" class="btn btn-outline-danger" (click)="personaForm.reset()">Limpiar</button>
+</form>

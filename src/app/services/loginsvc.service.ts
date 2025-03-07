@@ -10,7 +10,7 @@ import { Observable } from 'rxjs';
 export class LoginsvcService {
   usrGoogle: Observable<User | null>;
   usr = new Usuario;
-  
+  distritoId="hKDkvEBDlkuiugiR8CKw";
 
   constructor(private aut:Auth, private router:Router) {
     this.usrGoogle = user(this.aut);

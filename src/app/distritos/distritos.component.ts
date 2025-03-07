@@ -20,7 +20,7 @@ export class DistritosComponent {
 
   constructor(private firestoreService:FirestoreService){
     //Datos desde Firestore
-    this.firestoreService.getRecords().subscribe(records => {
+    this.firestoreService.getRecords("").subscribe(records => {
       this.data = records.map(record => new Distrito(record)); // Convierte cada registro en una instancia de Distrito      
     });
   }

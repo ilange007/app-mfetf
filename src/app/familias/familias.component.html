@@ -1,0 +1,23 @@
+<h4>Agregar Familia</h4>
+<form [formGroup]="familiaForm" (ngSubmit)="onSubmit()">
+  <label for="nombre">Nombre:</label>
+  <input type="text" id="nombre" formControlName="nombre" class="form-control">
+
+  <label for="direccion">Dirección:</label>
+  <input type="text" id="direccion" formControlName="direccion" class="form-control">
+
+  <label for="ubicacion">Ubicación:</label>
+  <input type="text" id="ubicacion" formControlName="ubicacion" class="form-control">
+
+  <div formArrayName="miembros">
+    <h5>Miembros</h5>
+    <button type="button" (click)="addMiembro()">Agregar Miembro</button>
+    <div *ngFor="let miembro of miembros.controls; let i = index">
+      <label for="miembro">Miembro {{ i + 1 }}:</label>
+      <input type="text" [formControlName]="i" class="form-control">
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-outline-success">Agregar</button>
+  <button type="reset" class="btn btn-outline-danger" (click)="familiaForm.reset()">Limpiar</button>
+</form>

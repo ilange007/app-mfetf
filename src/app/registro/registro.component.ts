@@ -13,7 +13,7 @@ import { Usuario } from '../models/usuario';
 export class RegistroComponent {
   newRecord = { name: 'Nuevo', email: 'ilange' };  // Un ejemplo de registro
   constructor(public loginService: LoginsvcService, private firestoreService: FirestoreService) {
-    this.firestoreService.getRecords().subscribe(records => {
+    this.firestoreService.getRecords("").subscribe(records => {
       records.forEach(record => {
         console.log(record);
       });
@@ -27,6 +27,6 @@ export class RegistroComponent {
     this.showButtonLogin = false;
   }
   crearDistrito(){
-    this.firestoreService.createRecord(new Usuario);
+    this.firestoreService.createRecord("",new Usuario);
   }
 }
