@@ -1,0 +1,35 @@
+name: Firebase Deploy
+
+on:
+  push:
+    branches:
+      - main  # Cambia a "master" si tu rama principal se llama así
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Paso 1: Checkout del código
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Paso 2: Configurar Node.js (si tu proyecto lo requiere)
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'  # Cambia a la versión de Node.js que uses
+
+      # Paso 3: Instalar dependencias (si usas npm o yarn)
+      - name: Install dependencies
+        run: npm install  # O usa "yarn install" si usas Yarn
+
+      # Paso 4: Instalar Firebase CLI
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      # Paso 5: Desplegar en Firebase
+      - name: Deploy to Firebase
+        run: firebase deploy --token ${{ secrets.FIREBASE_TOKEN }}
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
