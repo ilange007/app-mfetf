@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+/*import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -110,5 +110,47 @@ export class BeneficiariosComponent {
       this.sortColumn = column;
       this.sortDirection = 'asc';
     }
+  }
+}
+*/
+import { Component, EventEmitter, Output } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
+import { FirestoreService } from '../services/firestore.service';
+import { ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+
+@Component({
+  selector: 'app-beneficiarios',
+  standalone: true,
+  imports: [CommonModule,ReactiveFormsModule],
+  templateUrl: './beneficiarios.component.html',
+  styleUrls: ['./beneficiarios.component.css']
+})
+export class BeneficiariosComponent {
+  @Output() selectBeneficiario = new EventEmitter<any>();
+  searchControl = new FormControl('');
+  beneficiarios: any[] = [];
+  formFamilia: FormGroup = new FormGroup({
+    nombre: new FormControl(''),
+  });
+
+  constructor(private firestoreService: FirestoreService) {}
+
+  onFamiliaSubmit() {
+    this.formFamilia.value.nombre = this.searchControl.value?.toUpperCase();
+    this.firestoreService.createRecord('Familias', this.formFamilia.value);
+  }
+
+  search() {
+    const searchTerm = this.searchControl.value ? this.searchControl.value.toLowerCase() : '';
+    this.firestoreService.getRecords('Familias').subscribe(records => {
+      this.beneficiarios = records.filter(record => 
+        record.nombre.toLowerCase().includes(searchTerm)
+      );
+    });
+  }
+
+  select(beneficiario: any) {
+    this.selectBeneficiario.emit(beneficiario);
   }
 }

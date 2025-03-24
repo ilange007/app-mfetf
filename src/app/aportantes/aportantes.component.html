@@ -1,32 +1,42 @@
 <h4>Gestión de Aportantes</h4>
-<h6>Aporte de {{costoAporte}}Bs por Flia. Beneficiaria</h6>
-<br>
+<h6>Saldo Total: {{totalSaldos}}Bs. Aporte de {{costoAporte}}Bs por Flia. Beneficiaria
+  <button class="btn btn-outline-danger">
+    <span class="bi bi-paypal"></span>
+  </button>
+</h6>
+
 <input *ngIf="!isFormVisible" [(ngModel)]="searchTerm" class="form-control" id="myInput" type="text" placeholder="Buscar..">
 <button (click)="toggleForm()" id="toggleFormBtn" class="btn btn-success"><span class="bi bi-file-earmark-plus"></span></button>
 <form *ngIf="isFormVisible" [formGroup]="formAportante" (ngSubmit)="onSubmit()">    
-    <input type="text" id="nombreFam" formControlName="nombreFam" required class="form-control" placeholder="Flia Aportante..">
-    
-    <input formControlName="fliaBeneficiaria" class="form-control" id="beneficiaria" type="text" placeholder="Flia Beneficiaria..">
-    <button type="button" (click)="addBeneficiario()">Agregar Beneficiaria</button>
-    <select multiple id="beneficiarios" formControlName="beneficiarios" class="form-control">
-      <option *ngFor="let option of this.formAportante.get('beneficiarios')?.value" [value]="option.id">
-        {{ option.nombreFam }}
+    <input type="text" id="nombreFam" formControlName="nombreFam" required class="form-control" placeholder="Flia Aportante..">    
+    <!--<input formControlName="fliaBeneficiaria" class="form-control" id="beneficiaria" type="text" placeholder="Flia Beneficiaria..">-->
+    <label for="fliaBeneficiaria" class="form-control">Flia Beneficiaria:</label>
+    <button type="button" (click)="addBeneficiario()" class="btn btn-outline-success"><span class="bi bi-node-plus"></span></button>
+    <app-beneficiarios *ngIf="isModalVisible" (selectBeneficiario)="onBeneficiarioSelected($event)"></app-beneficiarios>
+    <button type="button" (click)="delBeneficiario()" class="btn btn-outline-warning"><span class="bi bi-node-minus"></span></button>
+    <select multiple id="beneficiarios" formArrayName="beneficiarios" class="form-control" (change)="onSelectBeneficiariosChange($event)">
+      <option *ngFor="let option of this.formAportante.get('beneficiarios')?.value" [value]="option?.id">
+        {{ option?.nombreFam }}
       </option>
     </select>
-    
     <input formControlName="monto" class="form-control" id="monto" type="text" placeholder="Monto Depósito..">
-    <label for="mesInicio" class="form-control">Mes Inicio:</label>
-    <input formControlName="mesInicio" class="form-control" id="mesInicio" type="date" placeholder="Mes Inicio..">
-
-    <button type="button" (click)="addAporte()">Agregar Aporte</button>
-    <select multiple id="aportes" formControlName="aportes" required class="form-control">
-      <option *ngFor="let option of this.formAportante.get('aportes')?.value" [value]="option.id">
-        {{ option.mesCubierto }}
+    <input formControlName="depositante" class="form-control" id="depositante" type="text" placeholder="Depositante.. (Opcional)">
+    <!--
+    <label for="mesInicio" class="form-control">Mes Inicio: (Opcional)</label>
+    <input formControlName="mesInicio" class="form-control" id="mesInicio" type="date" placeholder="Mes Inicio..">-->
+    <label for="fechaDepo" class="form-control">Fecha Depósito (Opcional - Hoy por Defecto)</label>
+    <input formControlName="fechaDepo" class="form-control" id="fechaDepo" type="date" placeholder="Fecha Depósito..">    
+    <button type="button" (click)="addAporte()" class="btn btn-outline-success" [disabled]="this.formAportante.get('monto')?.value==''||this.formAportante.get('monto')?.value==null"><span class="bi bi-node-plus"></span></button>
+    <button type="button" (click)="delAporte()" class="btn btn-outline-warning"><span class="bi bi-node-minus"></span></button>
+    <select multiple id="aportes" formArrayName="aportes" required class="form-control" (change)="onSelectAportesChange($event)">
+      <option *ngFor="let option of this.formAportante.get('aportes')?.value" [value]="option?.id">
+        {{ option?.descripcion }}
       </option>
     </select>
-    
-    <button type="submit" class="btn btn-outline-success">Agregar</button>
-    <button type="reset" class="btn btn-outline-danger" (click)="formAportante.reset()">Limpiar</button>
+    <button type="submit" class="btn btn-outline-success" [disabled]="formAportante.invalid">
+      <span>{{ this.selectedIdAportante !== '' ? 'Actualizar' : 'Agregar' }}</span>
+    </button>
+    <button type="reset" class="btn btn-outline-danger" (click)="onReset()">Limpiar</button>
 </form>           
 <br>
 <!-- Tabla dinámica -->
@@ -52,6 +62,9 @@
         <!-- Botones o acciones -->
         <button class="btn btn-outline-success" (click)="selectRecord(item, i)">
           <span class="bi bi-box-arrow-in-right"></span>
+        </button>
+        <button class="btn btn-outline-danger">
+          <span class="bi bi-paypal"></span>
         </button>
       </td>
     </tr>

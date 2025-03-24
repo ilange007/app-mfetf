@@ -1,8 +1,9 @@
+<!--
 <h4>Gestión de Familias Beneficiarias.</h4>
 <br>
 <input [(ngModel)]="searchTerm" class="form-control" id="myInput" type="text" placeholder="Buscar..">
 <button (click)="toggleForm()" id="toggleFormBtn" class="btn btn-success"><span class="bi bi-file-earmark-plus"></span></button>
-  <!-- Formulario dinámico -->
+  <!-- Formulario dinámico 
   <form *ngIf="isFormVisible" (ngSubmit)="addOrUpdateRecord()">
     <div *ngFor="let column of columns">
       <label class="form-control">{{ column | titlecase }}:</label>
@@ -14,7 +15,7 @@
     <button type="reset" class="btn btn-outline-danger" (click)="limpiarForm()">Limpiar</button>
   </form>
 <br>
-<!-- Tabla dinámica -->
+<!-- Tabla dinámica 
 <table class="table table-bordered table-striped">
   <thead>
     <tr>
@@ -24,21 +25,36 @@
           {{ sortDirection === 'asc' ? '🔼' : '🔽' }}
         </span>
       </th>
-      <th>Acción</th> <!-- Columna de acción estática -->
+      <th>Acción</th> <!-- Columna de acción estática 
     </tr>
   </thead>
   <tbody>
-    <!-- Mostrar los datos filtrados y ordenados dinámicamente -->
+    <!-- Mostrar los datos filtrados y ordenados dinámicamente 
     <tr *ngFor="let item of filteredData; let i = index">
       <td *ngFor="let column of columns">
         {{ item[column] }}
       </td>
       <td>
-        <!-- Botones o acciones -->
+        <!-- Botones o acciones 
         <button class="btn btn-outline-success" (click)="selectRecord(item, i)">
           <span class="bi bi-box-arrow-in-right"></span>
         </button>
       </td>
     </tr>
   </tbody>
-</table>
+</table>-->
+<div class="modal">
+  <div class="modal-content">
+    <span class="close" (click)="selectBeneficiario.emit(null)">&times;</span>
+    <h2>Buscar Familias Beneficiarias</h2>    
+    <form [formGroup]="formFamilia" (ngSubmit)="onFamiliaSubmit()">
+      <input [formControl]="searchControl" placeholder="Buscar..." (input)="search()">
+      <button type="submit" class="btn btn-outline-success"><span class="bi bi-node-plus"></span></button>
+    </form>
+    <ul>
+      <li *ngFor="let beneficiario of beneficiarios" (click)="select(beneficiario)">        
+        {{ beneficiario.nombre }}
+      </li>
+    </ul>
+  </div>
+</div>

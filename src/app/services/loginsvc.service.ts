@@ -3,6 +3,7 @@ import {GoogleAuthProvider, Auth, User, user, signOut, signInWithPopup} from '@a
 import { Router } from '@angular/router';
 import { Usuario } from '../models/usuario';
 import { Observable } from 'rxjs';
+import { FirestoreService } from '../services/firestore.service';
 
 @Injectable({
   providedIn: 'root' // Esto asegura que el servicio esté disponible globalmente
@@ -12,7 +13,7 @@ export class LoginsvcService {
   usr = new Usuario;
   distritoId="hKDkvEBDlkuiugiR8CKw";
 
-  constructor(private aut:Auth, private router:Router) {
+  constructor(private aut:Auth, private router:Router, public firestoreService: FirestoreService) {
     this.usrGoogle = user(this.aut);
   }
 
@@ -25,6 +26,7 @@ export class LoginsvcService {
         //this.usr.email+=user?.email;
         this.usr.photoURL="";
         this.usr.photoURL+=user?.photoURL;
+        this.usr.personaId+=this.firestoreService.getRecordById('Usuarios',this.usr.uid).subscribe((data:any)=>{return data.personaId;});
       }
       else this.router.navigate(['/login']);
     })
