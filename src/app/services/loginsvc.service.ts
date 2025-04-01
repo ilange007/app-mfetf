@@ -21,12 +21,13 @@ export class LoginsvcService {
   detectarCredenciales(){
     this.usrGoogle.subscribe(user => {
       if(user){
-        this.usr.uid+=user?.uid;
-        //this.usr.displayName+=user?.displayName;
-        //this.usr.email+=user?.email;
-        this.usr.photoURL="";
-        this.usr.photoURL+=user?.photoURL;
-        this.usr.personaId+=this.firestoreService.getRecordById('Usuarios',this.usr.uid).subscribe((data:any)=>{return data.personaId;});
+        this.usr.uid=user?.uid;
+        this.usr.displayName=user?.displayName;
+        this.usr.email=user?.email;        
+        this.usr.photoURL=user?.photoURL;
+        this.firestoreService.getRecordById('Usuarios', this.usr.uid).subscribe((data: any) => {
+          this.usr.personaId = data.personaId;
+        });        
       }
       else this.router.navigate(['/login']);
     })
@@ -40,8 +41,7 @@ export class LoginsvcService {
     return signOut(this.aut)
   }
   //Controlar Rutas Permitidas
-  controlarRuta(){
-    console.log(this.router.url);
+  controlarRuta(){    
     if (["/solicitudes"].includes(this.router.url)) 
       this.router.navigate(['/']);
   }

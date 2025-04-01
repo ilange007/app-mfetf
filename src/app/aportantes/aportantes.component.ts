@@ -3,7 +3,6 @@ import { FormGroup, FormControl, FormArray, FormsModule, ReactiveFormsModule, Va
 import { CommonModule } from '@angular/common';
 import { FirestoreService } from '../services/firestore.service';
 import { LoginsvcService } from '../services/loginsvc.service';
-//import { idToken } from '@angular/fire/auth';
 import { BeneficiariosComponent } from '../beneficiarios/beneficiarios.component';
 
 @Component({
@@ -26,6 +25,7 @@ export class AportantesComponent implements OnInit {
   isFormVisible: boolean = false; // Variable para controlar la visibilidad del formulario
   selectedIdAportante: string = ''; // Índice de la fila seleccionada
   isModalVisible: boolean = false;
+  isFamiliaAportante: boolean = false;
   formAportante!: FormGroup;
   data: any[] = [{ 
     Aportante: 'Flia Aportante',
@@ -37,8 +37,12 @@ export class AportantesComponent implements OnInit {
   pathFiresotre: string = "";
   costoAporte: number = 150;
   totalSaldos: number = 0;
+  totalDeudores: number = 0;
+  totalAportantes: number = 0;
+  totalBeneficiarias: number = 0;
 
   constructor(public firestoreService: FirestoreService, private loginSvc: LoginsvcService) {
+    loginSvc.detectarCredenciales();
     this.pathFiresotre = "Distritos/" + this.loginSvc.distritoId + "/Aportantes";
   }
 
@@ -68,21 +72,29 @@ export class AportantesComponent implements OnInit {
         ListaBeneficiarios: record.beneficiarios,
         Aportante: this.firestoreService.getRecordById("Familias", record.idFamilia).subscribe(familia => { this.data[this.cont++].Aportante = familia.nombre; }),
         Beneficiarios: record.beneficiarios?.length,        
-        Pago: record.aportes?.length>0?record.aportes[0].fechaDepo:'',
-        Saldo: record.aportes?.length>0?record.aportes[0].saldo:'',
+        Pago: record.aportes?.length>0?record.aportes[0].mesCubierto:'',
+        Saldo: obtenerSaldo(this.costoAporte,parseFloat(record.aportes?.length>0?record.aportes[0].saldo:'0'),record.aportes?.length>0?record.aportes[0].mesCubierto:'',record.beneficiarios?.length),
         //Estado: record.aportes?.length>0?obtenerEstado(record.aportes[record.aportes.length-1].mesCubierto):'',
-        Estado: record.aportes?.length>0?obtenerEstado(parseInt(record.aportes[0].saldo),this.costoAporte,record.beneficiarios?.length):'',
+        Estado: obtenerEstado(this.costoAporte,parseFloat(record.aportes?.length>0?record.aportes[0].saldo:'0'),record.aportes?.length>0?record.aportes[0].mesCubierto:'',record.beneficiarios?.length),
       }));
       this.cont = 0;
-      this.totalSaldos = 0; // Restablecer el total de saldos
-      this.calcularTotalSaldos();// Calcular el total de saldos de los aportantes
+      this.totalSaldos = 0; // Restablecer totales
+      this.totalDeudores = 0;
+      this.totalAportantes = 0;
+      this.totalBeneficiarias = 0;
+      this.calcularTotales();// Calcular el total de saldos de los aportantes
     });    
   }
   // Método para calcular el total de saldos de los aportantes
-  calcularTotalSaldos(){
+  calcularTotales(){
     this.data.forEach((aportante: any) => {
-      this.totalSaldos += parseInt(aportante.Saldo);
+      if (parseFloat(aportante.Saldo)>=0){
+        this.totalBeneficiarias += aportante.Beneficiarios;
+      }
+      else this.totalDeudores++;
+      this.totalAportantes++;      
     });
+    this.totalSaldos += this.totalBeneficiarias*this.costoAporte;
   }
 
   // Columnas dinámicas basadas en los datos
@@ -98,6 +110,11 @@ export class AportantesComponent implements OnInit {
     this.selectedIdAportante = ''; // Restablecer el índice de la fila seleccionada
     this.onReset(); // Restablecer el formulario    
   }
+  //Metodo para abrir Modal de Familia Aportante
+  onChangeFamiliaAportante() {
+    this.isFamiliaAportante = true;
+    this.isModalVisible = true;
+    }
   // Método para seleccionar una fila y cargar los datos en el formulario
   selectRecord(record: { [key: string]: any }, index: number) {
     this.newRecord = { ...record }; // Copiar los datos de la fila seleccionada al formulario
@@ -128,6 +145,7 @@ export class AportantesComponent implements OnInit {
         this.firestoreService.getRecordById("Familias", beneficiario.id !== undefined ? beneficiario.id : beneficiario).subscribe(familia => {
           beneficiarios.controls[index].setValue({id:(beneficiario.id !== undefined ? beneficiario.id : beneficiario), nombreFam: familia.nombre});
         });});
+      this.formAportante.get('monto')?.setValue(this.costoAporte*beneficiarios.length);
     }
     // Limpiar y agregar aportes al FormArray
     const aportes = this.formAportante.get('aportes') as FormArray;    
@@ -144,7 +162,11 @@ export class AportantesComponent implements OnInit {
     const aportes = this.formAportante.get('aportes') as FormArray;
     //const nuevoMonto = aportes.length>0?parseInt(this.formAportante.get('monto')?.value)+parseInt(aportes.value[aportes.length-1].saldo):this.formAportante.get('monto')?.value;
     //const nuevoSaldo = this.formAportante.value.beneficiarios.length>0?nuevoMonto%(this.costoAporte*this.formAportante.value.beneficiarios.length):nuevoMonto;
-    const nuevoSaldo = aportes.length>0?parseInt(this.formAportante.get('monto')?.value)+parseInt(aportes.value[0].saldo):this.formAportante.get('monto')?.value;
+    //const nuevoSaldo = aportes.length>0?parseInt(this.formAportante.get('monto')?.value)+parseInt(aportes.value[0].saldo):this.formAportante.get('monto')?.value;
+    const nuevoSaldo = aportes.length>0?
+    (this.formAportante.get('monto')?.value)-this.costoAporte*this.formAportante.value.beneficiarios.length+parseFloat(aportes.value[0].saldo)
+      //obtenerSaldo(this.costoAporte,parseFloat(this.formAportante.get('monto')?.value)+parseFloat(aportes.value[0].saldo),aportes.value[0].mesCubierto,this.formAportante.value.beneficiarios.length)
+      :(this.formAportante.get('monto')?.value)-this.costoAporte*this.formAportante.value.beneficiarios.length;
     //const mesInicio = new Date(this.formAportante.get('mesInicio')?.value);    
     /*const mesFin = new Date(
       mesInicio.getFullYear(), 
@@ -154,36 +176,42 @@ export class AportantesComponent implements OnInit {
     //const mesRango = (mesInicio.getMonth()+1)+'/'+mesInicio.getFullYear() + ' a ' + mesFin.getMonth()+'/'+mesFin.getFullYear();
     const hoy = (new Date()).getFullYear()+'-'+((new Date()).getMonth()+1)+'-'+(new Date()).getDate();
     const nuevaFechaDepo = (this.formAportante.get('fechaDepo')?.value!=''&&this.formAportante.get('fechaDepo')?.value!=null)?this.formAportante.get('fechaDepo')?.value:hoy;
+    //Cambiar por una función que cubra el rango de meses
+    let mesInicio = (this.formAportante.get('mesInicio')?.value!=''&&this.formAportante.get('mesInicio')?.value!=null)?this.formAportante.get('mesInicio')?.value
+      :aportes.length>0?calcularMeses(aportes.value[0].mesCubierto):hoy;
+    mesInicio = mesInicio.split('-')[0]+'-'+mesInicio.split('-')[1];
     aportes.insert(0, new FormControl({ 
       id: aportes.length, 
-      mesCubierto: 'mes pagado',// Almacenar datos del mes pagado, num de beneficiarios, monto, etc.
+      mesCubierto: mesInicio,// Almacenar datos del mes pagado, num de beneficiarios, monto, etc.
       saldo: nuevoSaldo,
       fechaDepo: nuevaFechaDepo,
       descripcion: this.formAportante.get('monto')?.value
-        +' | '+nuevaFechaDepo
+        +' | '+mesInicio
+        +' | NumBen: '+this.formAportante.value.beneficiarios.length
         +' | Saldo: '+ nuevoSaldo
         +' | '+this.formAportante.get('depositante')?.value
-        +' | Usr: '+this.loginSvc.usr.uid,
+        +' | '+nuevaFechaDepo
+        +' | Usr: '+this.loginSvc.usr.email
     },));
     this.formAportante.get('mesInicio')?.setValue('');
-    this.formAportante.get('fechaDepo')?.setValue('');
-    this.formAportante.get('monto')?.setValue(null);
+    this.formAportante.get('fechaDepo')?.setValue('');    
     this.formAportante.get('depositante')?.setValue('');
   }
   // Método para seleccionar un aporte
   onSelectAportesChange(event: any) {
-    const selectedValues = Array.from(event.target.selectedOptions, (option: any) => option.value);    
-    this.indexAporte = selectedValues[0];
+    const selectedValues = Array.from(event.target.selectedOptions, (option: any) => option.value).reverse();
+    this.indexAporte = selectedValues[0];//ERROR selecciona al reves
   }
   // Método para eliminar un aporte
   delAporte(){
-    if (this.indexAporte != -1) {
+    //if (this.indexAporte != -1) {
       const aportes = this.formAportante.get('aportes') as FormArray;
-      aportes.removeAt(this.indexAporte);
+      aportes.removeAt(0);
+      //aportes.removeAt(this.indexAporte);
       //this.formAportante.get('pagado')?.setValue((aportes.length==0)?'':aportes.value[aportes.length-1].mesCubierto);
       //this.formAportante.get('saldo')?.setValue((aportes.length==0)?'':150-this.formAportante.get('monto')?.value%this.costoAporte);
-      this.indexAporte = -1;
-    }
+      //this.indexAporte = -1;
+    //}
   }
   // Método para agregar una flia beneficiaria al FormArray
   addBeneficiario() {
@@ -204,6 +232,7 @@ export class AportantesComponent implements OnInit {
       const index = beneficiarios.controls.findIndex(control => control.value.id === this.idFliaBeneficiaria);
       if (index !== -1) {
         beneficiarios.removeAt(index);
+        this.formAportante.get('monto')?.setValue(this.costoAporte*beneficiarios.length);
       }
       this.formAportante.get('fliaBeneficiaria')?.setValue('');
       this.idFliaBeneficiaria = '';
@@ -229,8 +258,16 @@ export class AportantesComponent implements OnInit {
   // Método para manejar la selección de un beneficiario
   onBeneficiarioSelected(beneficiario: any) {
     if (beneficiario) {
-      const beneficiarios = this.formAportante.get('beneficiarios') as FormArray;
-      beneficiarios.push(new FormControl({ id: beneficiario.id, nombreFam: beneficiario.nombre }));
+      if(this.isFamiliaAportante) {
+        this.formAportante.get('nombreFam')?.setValue(beneficiario.nombre);
+        this.formAportante.get('idFamilia')?.setValue(beneficiario.id);
+        this.isFamiliaAportante = false;
+      }
+      else {
+        const beneficiarios = this.formAportante.get('beneficiarios') as FormArray;
+        beneficiarios.push(new FormControl({ id: beneficiario.id, nombreFam: beneficiario.nombre }));
+        this.formAportante.get('monto')?.setValue(this.costoAporte*beneficiarios.length);
+      }
     }
     this.isModalVisible = false;
   }
@@ -241,13 +278,14 @@ export class AportantesComponent implements OnInit {
     this.formAportante.reset(); // Limpiar el formulario
   }
   // Método para enviar el formulario
-  onSubmit() {
+  onSubmit() { // Hacer que no haya necesidad de addAporte
     if (this.selectedIdAportante !== '') {
       this.onUpdate();
     } else {
       this.onCreate();
     }
   }
+  
   // Método para crear un nuevo registro
   onCreate() {
     const formValues = this.formAportante.value;    
@@ -257,13 +295,15 @@ export class AportantesComponent implements OnInit {
       IDs.push(beneficiario.value.id);
     });
     formValues.beneficiarios=IDs;
-    this.firestoreService.createRecord("Familias", { nombre: formValues.nombreFam }).then((docRef) => {
+    /*this.firestoreService.createRecord("Familias", { nombre: formValues.nombreFam }).then((docRef) => {
       formValues.idFamilia = docRef;      
       this.limpiarCamposDocumento(formValues);// Eliminar campos no necesarios
       this.firestoreService.createRecord(this.pathFiresotre, formValues);      
     }).catch((error) => {
       console.error("Error adding document: ", error);
-    });    
+    });*/
+    this.limpiarCamposDocumento(formValues);// Eliminar campos no necesarios
+    this.firestoreService.createRecord(this.pathFiresotre, formValues);
     this.formAportante.reset();
     this.isFormVisible = false;
   }
@@ -288,7 +328,7 @@ export class AportantesComponent implements OnInit {
       IDs.push(beneficiario.value.id);
     });
     formValues.beneficiarios=IDs;
-    this.firestoreService.updateRecord("Familias", formValues.idFamilia, { nombre: formValues.nombreFam });
+    //this.firestoreService.updateRecord("Familias", formValues.idFamilia, { nombre: formValues.nombreFam });
     // Agregar código para actualizar el nombreFam en la tabla
     this.limpiarCamposDocumento(formValues);// Eliminar campos no necesarios
     this.firestoreService.updateRecord(this.pathFiresotre, this.selectedIdAportante, formValues);
@@ -357,11 +397,30 @@ export class AportantesComponent implements OnInit {
   }
 }*/
 // Función para obtener el estado de un aportante
-function obtenerEstado(saldo: number, costoAporte: number, numBeneficiarios:number): string {  
-  if (saldo >= costoAporte*numBeneficiarios) {
+function obtenerEstado(costoAporte:number, saldo: number, fechaDepo: string, numBeneficiarios:number): string {
+  saldo = parseFloat(obtenerSaldo(costoAporte, saldo, fechaDepo, numBeneficiarios));
+  if (saldo >= 0) {
     return 'Activo';
   }
   else {
     return 'Debe';
   }
+}
+// Función para obtener el saldo de un aportante
+function obtenerSaldo(costoAporte:number, saldo: number, fechaDepo: string, numBeneficiarios:number): string {
+  const hoy = new Date();//Fecha actual 
+  const pm = parseInt(fechaDepo.split('-')[1]);//Mes pagado
+  const py = parseInt(fechaDepo.split('-')[0]);//Año pagado
+  const difMeses = (hoy.getFullYear()-py)*12+(hoy.getMonth()+1-pm);
+  saldo -= difMeses*costoAporte*numBeneficiarios;    
+  return (saldo).toFixed(2);
+}
+
+function calcularMeses(mesCubierto:string): string {
+  //convertir a fecha
+  const nuevoMes = new Date(mesCubierto+'-28');
+  //sumar un mes
+  nuevoMes.setMonth(nuevoMes.getMonth()+1);
+  //convertir a string  
+  return nuevoMes.getFullYear()+'-'+(nuevoMes.getMonth()+1);    
 }

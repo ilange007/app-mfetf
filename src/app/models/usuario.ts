@@ -3,8 +3,10 @@ class Rol{
     distritoId:string="hKDkvEBDlkuiugiR8CKw";
 }
 export class Usuario {
-    uid="E5G0dejb3HhrjvykdHES4xNI3H42";    
-    photoURL="logoMGR.webp";
-    personaId!:string;
+    uid:string | null = "";
+    photoURL:string | null = "logoMGR.webp";
+    personaId:string | null = "";
     roles:[Rol]=[new Rol];
+    displayName: string | null = "";
+    email: string | null = "";
 }
