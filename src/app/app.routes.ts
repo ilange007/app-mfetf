@@ -7,6 +7,8 @@ import { EntregasComponent } from './entregas/entregas.component';
 import { BeneficiariosComponent } from './beneficiarios/beneficiarios.component';
 import { CanastaComponent } from './canasta/canasta.component';
 import { DistritosComponent } from './distritos/distritos.component';
+import { FamiliaComponent } from './familias/familia/familia.component';
+import { FamiliasComponent } from './familias/familias.component';
 
 export const routes: Routes = [
     { path: '', component: DashboardComponent },  // Ruta por defecto
@@ -17,4 +19,6 @@ export const routes: Routes = [
     { path: 'beneficiarios', component: BeneficiariosComponent },
     { path: 'canasta', component: CanastaComponent },
     { path: 'distritos', component: DistritosComponent },
+    { path: 'familias', component: FamiliasComponent },
+    { path: 'familia/:id', component: FamiliaComponent },
 ];

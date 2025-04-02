@@ -11,7 +11,7 @@ import { FirestoreService } from '../services/firestore.service';
 export class LoginsvcService {
   usrGoogle: Observable<User | null>;
   usr = new Usuario;
-  distritoId="hKDkvEBDlkuiugiR8CKw";
+  distritoId: string = "";
 
   constructor(private aut:Auth, private router:Router, public firestoreService: FirestoreService) {
     this.usrGoogle = user(this.aut);
@@ -21,13 +21,17 @@ export class LoginsvcService {
   detectarCredenciales(){
     this.usrGoogle.subscribe(user => {
       if(user){
-        this.usr.uid=user?.uid;
-        this.usr.displayName=user?.displayName;
-        this.usr.email=user?.email;        
-        this.usr.photoURL=user?.photoURL;
-        this.firestoreService.getRecordById('Usuarios', this.usr.uid).subscribe((data: any) => {
-          this.usr.personaId = data.personaId;
-        });        
+        this.firestoreService.getRecordById('Usuarios', user.uid).subscribe((data: any) => {
+          if (data) {
+            this.usr.uid = user?.uid;
+            this.usr.idPersona = data.personaId;
+            this.usr.photoURL = user?.photoURL;//data.photoURL;
+            this.usr.email = user?.email;//data.email;
+            this.usr.roles = data.roles;            
+            this.distritoId = data.roles[0].idDistrito;//Hacer codigo para el caso de que haya más de un rol
+          }
+          else this.router.navigate(['/login']);
+        });
       }
       else this.router.navigate(['/login']);
     })
@@ -38,6 +42,8 @@ export class LoginsvcService {
     return signInWithPopup(this.aut, new GoogleAuthProvider())
   }
   logout(){
+    this.usr = new Usuario();
+    this.router.navigate(['/login']);
     return signOut(this.aut)
   }
   //Controlar Rutas Permitidas

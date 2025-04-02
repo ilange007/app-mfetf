@@ -5,11 +5,10 @@
 <input *ngIf="!isFormVisible" [(ngModel)]="searchTerm" class="form-control" id="myInput" type="text" placeholder="Buscar..">
 <button (click)="toggleForm()" id="toggleFormBtn" class="btn btn-success"><span class="bi bi-file-earmark-plus"></span></button>
 <form *ngIf="isFormVisible" [formGroup]="formAportante" (ngSubmit)="onSubmit()">    
-    <input type="text" id="nombreFam" formControlName="nombreFam" required class="form-control" (click)="onChangeFamiliaAportante()" placeholder="Flia Aportante..">    
-    <!--<input formControlName="fliaBeneficiaria" class="form-control" id="beneficiaria" type="text" placeholder="Flia Beneficiaria..">-->
+    <input type="text" id="nombreFam" formControlName="nombreFam" required class="form-control" (click)="onChangeFamiliaAportante()" placeholder="Flia Aportante..">        
     <label for="fliaBeneficiaria" class="form-control">Flia Beneficiaria:</label>
     <button type="button" (click)="addBeneficiario()" class="btn btn-outline-success"><span class="bi bi-node-plus"></span></button>
-    <app-beneficiarios *ngIf="isModalVisible" (selectBeneficiario)="onBeneficiarioSelected($event)"></app-beneficiarios>
+    <app-familias *ngIf="isModalVisible" (selectFamilia)="onFamiliaSelected($event)"></app-familias>
     <button type="button" (click)="delBeneficiario()" class="btn btn-outline-warning"><span class="bi bi-node-minus"></span></button>
     <select multiple id="beneficiarios" formArrayName="beneficiarios" class="form-control" (change)="onSelectBeneficiariosChange($event)">
       <option *ngFor="let option of this.formAportante.get('beneficiarios')?.value" [value]="option?.id">

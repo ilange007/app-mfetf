@@ -1,0 +1,10 @@
+<form [formGroup]="familiaForm" (ngSubmit)="guardarCambios()">
+  <label for="nombre">Nombre:</label>
+  <input
+    id="nombre"
+    formControlName="nombre"
+    type="text"
+    (input)="convertirAMayusculas('nombre')"
+  />
+  <button type="submit" [disabled]="familiaForm.invalid">Guardar</button>
+</form>

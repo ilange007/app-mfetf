@@ -1,41 +1,59 @@
-import { Component, OnInit } from '@angular/core';
-import { FormGroup, FormControl, FormArray, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Output } from '@angular/core';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { FirestoreService } from '../services/firestore.service';
+import { ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { LoginsvcService } from '../services/loginsvc.service';
 
 @Component({
   selector: 'app-familias',
   standalone: true,
-  imports: [FormsModule, CommonModule, ReactiveFormsModule],
+  imports: [CommonModule,ReactiveFormsModule],
   templateUrl: './familias.component.html',
   styleUrl: './familias.component.css'
 })
-export class FamiliasComponent implements OnInit {
-  familiaForm!: FormGroup;
-  pathFiresotre: string = "Familias";
+export class FamiliasComponent {
+  @Output() selectFamilia = new EventEmitter<any>();  
+  familias: any[] = [];
+  formFamilia: FormGroup = new FormGroup({
+    nombre: new FormControl('',[Validators.required, Validators.minLength(3)]),
+  });
 
-  constructor(public firestoreService: FirestoreService) {}
+  constructor(private firestoreService: FirestoreService, private router: Router, private loginSvc: LoginsvcService) {}
 
-  ngOnInit() {
-    this.familiaForm = new FormGroup({
-      id: new FormControl(''),
-      nombre: new FormControl(''),
-      direccion: new FormControl(''),
-      ubicacion: new FormControl(''),
-      miembros: new FormArray([])
-    });
+  ngOnInit(): void {
+    if (this.loginSvc.usr.roles[0]?.nombreRol != "SuperAdmin") this.router.navigate(['/login']); // Redirigir a la página de inicio de sesión si el rol no está permitido
   }
 
-  get miembros() {
-    return this.familiaForm.get('miembros') as FormArray;
+  onFamiliaSubmit() {
+    if (this.formFamilia.valid) {
+      this.formFamilia.value.nombre = this.formFamilia.value.nombre.toUpperCase();
+      this.firestoreService.createRecord('Familias', this.formFamilia.value);
+    }
+    else console.log('Formulario inválido');
   }
 
-  addMiembro() {
-    this.miembros.push(new FormControl(''));
+  search() {
+    if (this.formFamilia.value.nombre.length < 3) {
+      this.familias = [];
+      return;
+    }
+    else {
+      const searchTerm = this.formFamilia.value.nombre ? this.formFamilia.value.nombre.toLowerCase() : '';
+      this.firestoreService.getRecords('Familias').subscribe(records => {
+        this.familias = records.filter(record => 
+          record.nombre.toLowerCase().includes(searchTerm)
+        );
+      });
+    }
   }
-
-  onSubmit() {
-    const formValues = this.familiaForm.value;
-    this.firestoreService.createRecord(this.pathFiresotre,formValues);
+  select(familia: any) {
+    this.selectFamilia.emit(familia);
+  }  
+  openFamilia() {    
+    //Obtener el idFamilia de la familia seleccionada y pasarlo al componente Familia
+    const idFamilia = this.familias[0].id;    
+    this.router.navigate(['/familia', idFamilia]);
   }
 }

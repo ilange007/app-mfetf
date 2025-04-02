@@ -1,23 +1,16 @@
-<h4>Agregar Familia</h4>
-<form [formGroup]="familiaForm" (ngSubmit)="onSubmit()">
-  <label for="nombre">Nombre:</label>
-  <input type="text" id="nombre" formControlName="nombre" class="form-control">
-
-  <label for="direccion">Dirección:</label>
-  <input type="text" id="direccion" formControlName="direccion" class="form-control">
-
-  <label for="ubicacion">Ubicación:</label>
-  <input type="text" id="ubicacion" formControlName="ubicacion" class="form-control">
-
-  <div formArrayName="miembros">
-    <h5>Miembros</h5>
-    <button type="button" (click)="addMiembro()">Agregar Miembro</button>
-    <div *ngFor="let miembro of miembros.controls; let i = index">
-      <label for="miembro">Miembro {{ i + 1 }}:</label>
-      <input type="text" [formControlName]="i" class="form-control">
-    </div>
+<div class="modal">
+  <div class="modal-content">
+    <span class="close" (click)="selectFamilia.emit(null)">&times;</span>
+    <h2>Buscar Familias</h2>    
+    <form [formGroup]="formFamilia"><!-- (ngSubmit)="onFamiliaSubmit()">-->
+      <input formControlName="nombre" placeholder="Buscar..." (input)="search()"/>
+      <button class="btn btn-outline-success" (click)="onFamiliaSubmit()" [disabled]="formFamilia.invalid"><span class="bi bi-cloud-plus"></span></button>      
+      <button class="btn btn-outline-primary" (click)="openFamilia()" [disabled]="familias.length==0"><span class="bi bi-box-arrow-in-right"></span></button>
+    </form>
+    <ul>
+      <li *ngFor="let familia of familias" (click)="select(familia)">        
+        {{ familia.nombre }}
+      </li>
+    </ul>
   </div>
-
-  <button type="submit" class="btn btn-outline-success">Agregar</button>
-  <button type="reset" class="btn btn-outline-danger" (click)="familiaForm.reset()">Limpiar</button>
-</form>
+</div>
