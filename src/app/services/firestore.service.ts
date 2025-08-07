@@ -12,7 +12,7 @@ export class FirestoreService {
   // Método para crear un nuevo documento y devolver el ID del documento
   async createRecord(collectionPath: string, data: any): Promise<string> {
     const ref = doc(collection(this.firestore, collectionPath)); // Crea una referencia de documento con un ID generado
-    await setDoc(ref, JSON.parse(JSON.stringify(data))); // Establece los datos del documento
+    await setDoc(ref, { ...data }); // Establece los datos del documento
     return ref.id; // Devuelve el ID del documento
   }
 
@@ -31,7 +31,7 @@ export class FirestoreService {
   // Método para actualizar un documento por ID
   updateRecord(collectionPath:string, id: string, data: any): Promise<void> {
     const ref = doc(this.firestore, `${collectionPath}/${id}`);
-    return updateDoc(ref, data);
+    return updateDoc(ref, { ...data });
   }
 
   // Método para eliminar un documento por ID
