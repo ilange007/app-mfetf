@@ -48,6 +48,7 @@ desktop.ini
 
 # Environment variables
 .env
+src/environments/
 .env.local
 .env.*.local
 
