@@ -9,6 +9,9 @@ import { CanastaComponent } from './canasta/canasta.component';
 import { DistritosComponent } from './distritos/distritos.component';
 import { FamiliaComponent } from './familias/familia/familia.component';
 import { FamiliasComponent } from './familias/familias.component';
+import { MedicamentosComponent } from './medicamentos/medicamentos.component';
+import { ProductosComponent } from './productos/productos.component';
+import { TallerComponent } from './taller/taller.component';
 
 export const routes: Routes = [
     { path: '', component: DashboardComponent },  // Ruta por defecto
@@ -21,4 +24,7 @@ export const routes: Routes = [
     { path: 'distritos', component: DistritosComponent },
     { path: 'familias', component: FamiliasComponent },
     { path: 'familia/:id', component: FamiliaComponent },
+    { path: 'medicamentos', component: MedicamentosComponent },
+    { path: 'productos', component: ProductosComponent },
+    { path: 'taller', component: TallerComponent },
 ];

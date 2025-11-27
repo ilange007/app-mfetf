@@ -1,11 +1,12 @@
-<h4>Gestión de Aportantes</h4><!--Recaudado {{totalSaldos}}Bs para {{totalBeneficiarias}} familias. -->
-<h6>{{totalAportantes}} Aportantes registrados. Aportantes por cobrar: {{totalDeudores}}
+<h4>Gestión de Aportantes <!--Recaudado {{totalSaldos}}Bs para --></h4>
+<h6>{{totalAportantes}} Aportantes activos {{totalBeneficiarias}} familias beneficiarias. Aportantes por cobrar: {{totalDeudores}}
 </h6>
 
 <input *ngIf="!isFormVisible" [(ngModel)]="searchTerm" class="form-control" id="myInput" type="text" placeholder="Buscar..">
 <button (click)="toggleForm()" id="toggleFormBtn" class="btn btn-success"><span class="bi bi-file-earmark-plus"></span></button>
 <form *ngIf="isFormVisible" [formGroup]="formAportante" (ngSubmit)="onSubmit()">    
     <input type="text" id="nombreFam" formControlName="nombreFam" required class="form-control" (click)="onChangeFamiliaAportante()" placeholder="Flia Aportante..">        
+    <input formControlName="montoAporte" class="form-control" id="monto" type="text" placeholder="Por defecto {{costoAportePorDefecto}} Bs. por Beneficiaria (Opcional)">
     <label for="fliaBeneficiaria" class="form-control">Flia Beneficiaria:</label>
     <button type="button" (click)="addBeneficiario()" class="btn btn-outline-success"><span class="bi bi-node-plus"></span></button>
     <app-familias *ngIf="isModalVisible" (selectFamilia)="onFamiliaSelected($event)"></app-familias>
@@ -15,7 +16,7 @@
         {{ option?.nombreFam }}
       </option>
     </select>
-    <input formControlName="monto" class="form-control" id="monto" type="text" placeholder="Monto Depósito..">
+    <input formControlName="monto" class="form-control" id="monto" type="text" placeholder="Monto Depósito..">    
     <input formControlName="depositante" class="form-control" id="depositante" type="text" placeholder="Depositante.. (Opcional)">    
     <label for="mesInicio" class="form-control">Mes Inicio: (Opcional)</label>
     <input formControlName="mesInicio" class="form-control" id="mesInicio" type="date" placeholder="Mes Inicio..">
@@ -57,10 +58,10 @@
         <!-- Botones o acciones -->
         <button class="btn btn-outline-success" (click)="selectRecord(item, i)">
           <span class="bi bi-box-arrow-in-right"></span>
-        </button><!--
-        <button class="btn btn-outline-danger">
-          <span class="bi bi-paypal"></span>
-        </button>-->
+        </button>
+        <button *ngIf="item.Estado!='Inactivo'" class="btn btn-outline-danger">
+          <span class="bi bi-paypal" (click)="quickPayment(item, i)"></span>
+        </button>
       </td>
     </tr>
   </tbody>

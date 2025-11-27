@@ -1,0 +1,41 @@
+<h4>Gestión de Productos</h4><!--
+    <h6>{{totalAportantes}} Aportantes registrados. Aportantes por cobrar: {{totalDeudores}}
+    </h6>-->
+    
+    <input [(ngModel)]="searchTerm" class="form-control" id="myInput" type="text" placeholder="Buscar..">
+    <button (click)="addItem()" id="toggleFormBtn" class="btn btn-success"><span class="bi bi-file-earmark-plus"></span></button>
+    <br>
+    <!-- Tabla dinámica -->
+    <table class="table table-bordered table-striped">
+      <thead>
+        <tr>
+          <th *ngFor="let column of columns" (click)="sort(column)">
+            {{ column.toString() | titlecase }}
+            <span *ngIf="sortColumn === column">
+              {{ sortDirection === 'asc' ? '🔼' : '🔽' }}
+            </span>
+          </th>
+          <th>Acción</th> <!-- Columna de acción estática -->
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Mostrar los datos filtrados y ordenados dinámicamente -->
+        <tr *ngFor="let item of filteredData; let i = index">
+          <td *ngFor="let column of columns">
+            <span *ngIf="!item.isEditing">{{ item[column] }}</span>
+            <input *ngIf="item.isEditing" [(ngModel)]="item[column]" class="form-control" />
+          </td>
+          <td>
+            <button class="btn btn-outline-primary" *ngIf="!item.isEditing" (click)="enableEdit(item)">
+              Editar
+            </button>
+            <button class="btn btn-outline-success" *ngIf="item.isEditing" (click)="saveEdit(item)">
+              Guardar
+            </button>
+            <button class="btn btn-outline-secondary" *ngIf="item.isEditing" (click)="cancelEdit(item)">
+              Cancelar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
