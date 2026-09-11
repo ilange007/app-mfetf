@@ -304,23 +304,24 @@ dos cosas, no una.
 
 ### ADR-08 · Despliegue estático continuo desde GitHub
 
-**Estado:** vigente (explícita), **con la configuración rota**.
+**Estado:** vigente (explícita).
 
 **Decisión.** Firebase Hosting sirve `dist/app-mfetf/browser` con *rewrite* de `**` a `/index.html`
-(SPA). Dos workflows generados por la CLI de Firebase despliegan a `live` (merge) y a canal de
-vista previa (pull request).
+(SPA). GitHub Actions compila y despliega: `master` → producción (`tfemf-839ad`), `staging` →
+staging (`tfemfdev`), y cada PR obtiene una vista previa temporal. Detalle en
+[§11.2](#112-entornos-y-despliegue-continuo).
 
-**Lo que está roto hoy** (ver [§11.3](#113-lo-que-está-roto-en-ci)):
+**Razón.** Dos entornos permiten probar contra datos que no son los de las familias reales antes de
+tocar producción — que es lo que hoy no existe y por lo que cualquier prueba se hace sobre datos
+vivos.
 
-- Los workflows disparan en la rama `main`, pero el trabajo va en **`dev`**.
-- Ejecutan `ng build` **sin `npm ci` y sin `actions/setup-node`**: `ng` no existe en el runner.
-- Nunca ejecutan `ng test` ni ningún *lint*.
-- El build necesita `src/environments/environment.ts`, que está en `.gitignore`: **aunque se
-  arreglara lo anterior, seguiría fallando** hasta resolver la configuración ([§11.1](#111-el-archivo-que-falta)).
+**Historia.** Hasta 2026-09 los workflows generados por la CLI de Firebase **no podían funcionar**:
+ejecutaban `ng build` sin `actions/setup-node` ni `npm ci` (`ng: command not found`, exit 127) y
+disparaban sobre `main`, una rama que no existe. El despliegue era manual. Se reescribieron desde
+cero.
 
-En la práctica: **el despliegue es manual** (`ng build && firebase deploy`).
-
----
+**Rechazado.** Desplegar desde la máquina de alguien. Con voluntariado rotatorio, "funciona en mi
+portátil" es el modo por defecto de romper producción.
 
 ### ADR-09 · Bootstrap y los iconos por CDN, sin framework de componentes
 
@@ -652,11 +653,49 @@ archivo.
 Alternativa a discutir: versionar `src/environments/environment.example.ts` con la forma del objeto
 (y valores vacíos), para que el fallo sea evidente en vez de misterioso.
 
-### 11.2 Despliegue manual (el que funciona hoy)
+### 11.2 Entornos y despliegue continuo
+
+Dos proyectos de Firebase, una rama cada uno:
+
+| Entorno | Rama | Proyecto Firebase | Workflow |
+|---|---|---|---|
+| **Producción** | `master` | `tfemf-839ad` | `.github/workflows/deploy-produccion.yml` |
+| **Staging** | `staging` | `tfemfdev` | `.github/workflows/deploy-staging.yml` |
+| Vista previa | cualquier PR | `tfemfdev` (canal temporal, 7 días) | `.github/workflows/pull-request.yml` |
+
+Un merge a `master` o a `staging` compila y despliega solo. `.firebaserc` define los alias
+`produccion` y `staging` para poder desplegar a mano con `firebase deploy -P staging`.
+
+**Secrets del repositorio** (Settings → Secrets and variables → Actions):
+
+| Secret | Para qué |
+|---|---|
+| `FIREBASE_CONFIG_PROD` | Configuración web de Firebase de `tfemf-839ad`, como JSON |
+| `FIREBASE_CONFIG_STAGING` | Ídem de `tfemfdev` |
+| `FIREBASE_SERVICE_ACCOUNT_TFEMF_839AD` | Cuenta de servicio de producción |
+| `FIREBASE_SERVICE_ACCOUNT_TFEMFDEV` | Cuenta de servicio de staging |
+
+**Cómo se resuelve `environment.ts` en CI.** Sigue estando en `.gitignore`
+([§11.1](#111-el-archivo-que-falta)), así que el runner no lo tiene. Cada workflow lo genera antes
+de compilar con `scripts/generar-environment.mjs`, que lee el JSON de la variable `FIREBASE_CONFIG`,
+valida que traiga las claves imprescindibles y escribe el archivo. Sirve igual en local:
 
 ```bash
-ng build                       # genera dist/app-mfetf/browser
-firebase deploy --only hosting # o: --only firestore:rules
+export FIREBASE_CONFIG='{"apiKey":"…","authDomain":"…","projectId":"…","appId":"…"}'
+npm run generar-environment
+```
+
+**Los PR desde un fork no reciben secrets.** Si un secret falta, el workflow de PR compila con
+`.github/firebase-config-relleno.json` — basta para verificar que el proyecto compila — y **omite**
+la vista previa. Sin ese plan B, el check de una persona voluntaria que trabaja desde su fork nunca
+podría ponerse en verde.
+
+**Despliegue manual**, si hace falta:
+
+```bash
+npm run build
+npx firebase deploy --only hosting -P produccion   # o -P staging
+npx firebase deploy --only firestore:rules -P produccion
 ```
 
 `firebase.json` publica `dist/app-mfetf/browser` con *rewrite* de `**` → `/index.html`.
@@ -665,23 +704,28 @@ firebase deploy --only hosting # o: --only firestore:rules
 publica** (`public/` es la carpeta de *assets* de Angular, no la raíz de Hosting). Es ruido: se puede
 borrar junto con `public/404.html`.
 
-### 11.3 Lo que está roto en CI
+### 11.3 Lo que sigue sin cubrir el CI
 
-Los dos workflows de `.github/workflows/` fallarían si se ejecutaran. Arreglo mínimo:
+**Los tests no se ejecutan, y hoy no podrían.** `ng test` ni siquiera compila:
 
-```yaml
-- uses: actions/checkout@v4
-- uses: actions/setup-node@v4
-  with:
-    node-version: '20'
-    cache: npm
-- run: npm ci
-- run: npx ng build          # 'ng' no está en el PATH del runner
+```
+src/app/services/firesvc.service.ts:44:14 - error TS2339:
+  Property 'displayName' does not exist on type 'Usuario'.
+src/app/services/firesvc.service.ts:49:38 - error TS2345:
+  Argument of type 'string | null' is not assignable to parameter of type 'string | undefined'.
 ```
 
-Más: apuntar el disparador a la rama correcta (**`dev`**, no `main`) y resolver de dónde sale
-`src/environments/environment.ts` en CI (un *secret* de GitHub que se escriba en un paso previo es lo
-habitual).
+`ng build` no lo detecta porque `tsconfig.app.json` solo compila lo que alcanza `main.ts`, y **nadie
+importa `firesvc`**: el archivo nunca se comprueba. `tsconfig.spec.json`, en cambio, incluye
+`src/**/*.spec.ts`, y `firesvc.service.spec.ts` arrastra el servicio muerto con él.
+
+Es decir: **el único obstáculo para tener tests en CI es un archivo que ya sobra**
+([§3](#3-estado-real-del-código)). Borrar `firesvc.service.ts` y su `.spec.ts` desbloquea el paso
+`npx ng test --watch=false --browsers=ChromeHeadless`.
+
+Tampoco hay *lint* (no está configurado `@angular-eslint`) ni despliegue automático de
+`firestore.rules` — esto último, a propósito: con las reglas abiertas
+([§10.1](#101-el-agujero-abierto)), automatizar su despliegue antes de arreglarlas no aporta nada.
 
 ### 11.4 Versiones
 
@@ -737,7 +781,8 @@ lo demás sea más barato y seguro. Cada fase entrega algo verificable.
 |---|---|---|
 | **0** | 🔒 **Cerrar `firestore.rules`** + probarlas con el emulador | Una sesión sin autenticar no lee nada; el personal autenticado sigue trabajando igual |
 | **0** | Arreglar el arranque en frío: `environment.example.ts` + README | Alguien nuevo clona y levanta la app sin preguntar nada |
-| 1 | CI que de verdad corre: `npm ci` + build + test, en la rama `dev` | El PR se pone en rojo cuando algo rompe |
+| ~~1~~ | ~~CI que de verdad corre~~ · **hecho 2026-09-11**: build y despliegue a producción y staging | Un merge a `master` o `staging` despliega solo |
+| 1b | Añadir los tests al CI: borrar `firesvc.service.ts` (y su spec) desbloquea `ng test` | El PR se pone en rojo cuando algo rompe |
 | 2 | Limpieza: borrar código muerto (`firesvc`, modelos de clínica, `app-routing.module`, jQuery y Bootstrap 3 de `index.html`) | El repositorio solo contiene lo que se usa |
 | 3 | Extraer `AportantesService` con el dominio (saldo, estado, meses) + **pruebas unitarias reales** | Las reglas de [§7](#7-reglas-de-negocio-del-programa) están cubiertas por tests |
 | 4 | Guards de rutas (`CanActivateFn`) y baja de suscripciones (`takeUntilDestroyed`) | Sin comprobaciones de rol copiadas en `ngOnInit`; sin listeners huérfanos |
@@ -759,6 +804,8 @@ lo demás sea más barato y seguro. Cada fase entrega algo verificable.
 | Fecha | ADR / §  afectado | Desviación | Razón | Revisar en |
 |---|---|---|---|---|
 | 2026-09-11 | — | Se redacta este documento describiendo el estado real, incluidas las decisiones que nunca fueron explícitas | El proyecto se abre a voluntariado y necesita un mapa honesto antes que uno aspiracional | Cuando se cierre la Fase 0 |
+| 2026-09-11 | [ADR-08](#adr-08--despliegue-estático-continuo-desde-github), §11.2 | Se añade un segundo entorno (`tfemfdev`) con su rama `staging`, y se reescriben los workflows | Poder probar sin tocar los datos de familias reales. Los workflows anteriores no podían ejecutarse | Fase 1b, al añadir los tests |
+| 2026-09-11 | §11.1 | `environment.ts` se genera en CI con `scripts/generar-environment.mjs` desde un secret por entorno, en vez de versionarse | Decisión del equipo: mantener la config fuera del repositorio. Consecuencia aceptada: una clonación limpia sigue sin compilar y cada voluntario necesita que le pasen la configuración | Si el arranque en frío sigue costando tiempo a quien llega |
 | | | | | |
 
 ---
@@ -782,7 +829,7 @@ lo demás sea más barato y seguro. Cada fase entrega algo verificable.
 | Código muerto de otro proyecto | `firesvc`, modelos de clínica | Quien llega no sabe qué mirar |
 | Componentes comentados enteros | `beneficiarios.component.ts` | El nombre promete algo que no hace |
 | Pruebas que solo son andamios | Todos los `.spec.ts` | Ningún cambio está protegido |
-| CI que no puede funcionar | `.github/workflows/` | Verde falso, o rojo permanente ignorado |
+| Tests que no compilan, y por eso no se ejecutan en CI | `firesvc.service.spec.ts` | Ningún cambio está protegido ([§11.3](#113-lo-que-sigue-sin-cubrir-el-ci)) |
 
 ### 15.2 Checklist antes de dar el proyecto por "en producción"
 
@@ -798,7 +845,8 @@ lo demás sea más barato y seguro. Cada fase entrega algo verificable.
 - [ ] Documentado cómo dar de alta a una persona usuaria (`Usuarios/{uid}`)
 
 **Calidad**
-- [ ] CI ejecuta `npm ci`, build y tests en la rama de trabajo
+- [x] CI ejecuta `npm ci` y build en cada PR y en cada despliegue
+- [ ] CI ejecuta también los tests (bloqueado por [§11.3](#113-lo-que-sigue-sin-cubrir-el-ci))
 - [ ] Las reglas de negocio de [§7](#7-reglas-de-negocio-del-programa) tienen pruebas unitarias
 - [ ] Sin componentes comentados ni servicios muertos
 
@@ -845,7 +893,7 @@ Ninguna de estas se puede responder leyendo el código. **Necesitan a la Misión
 | Base de datos | Cloud Firestore | Fuente de verdad única |
 | Realtime Database | *provista y sin usar* | Quitar `provideDatabase` de `app.config.ts` |
 | Estilos | Bootstrap 5 + Bootstrap Icons (CDN) | Angular Material instalado y sin usar |
-| CI/CD | GitHub Actions + `action-hosting-deploy` | Roto hoy ([§11.3](#113-lo-que-está-roto-en-ci)) |
-| Pruebas | Karma + Jasmine | Solo andamios |
+| CI/CD | GitHub Actions + `action-hosting-deploy` | `master` → `tfemf-839ad`; `staging` → `tfemfdev` |
+| Pruebas | Karma + Jasmine | Solo andamios, y no compilan ([§11.3](#113-lo-que-sigue-sin-cubrir-el-ci)) |
 | Analítica / trazas | **Ninguna** | No hay forma de saber si algo falla en producción |
 | Copias de seguridad | **Ninguna** | Ver checklist |

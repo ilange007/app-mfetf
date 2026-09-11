@@ -1,0 +1,50 @@
+# Producción: merge a master → despliega a tfemf-839ad
+#
+# Secrets necesarios (Settings → Secrets and variables → Actions):
+#   FIREBASE_CONFIG_PROD                  JSON de configuración web de Firebase
+#   FIREBASE_SERVICE_ACCOUNT_TFEMF_839AD  clave de cuenta de servicio (ya existe)
+name: Desplegar a producción
+
+on:
+  push:
+    branches:
+      - master
+
+# Un despliegue a la vez. No cancelamos el que ya está en marcha para no dejar
+# Hosting a medias.
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    name: Build y deploy a tfemf-839ad
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # src/environments/ está en .gitignore, así que el runner no lo tiene.
+      - name: Generar src/environments/environment.ts
+        env:
+          FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG_PROD }}
+        run: node scripts/generar-environment.mjs --production
+
+      # 'ng' no está en el PATH del runner: npx lo resuelve desde node_modules.
+      - name: Compilar
+        run: npx ng build --configuration production
+
+      - name: Desplegar a Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TFEMF_839AD }}
+          channelId: live
+          projectId: tfemf-839ad

@@ -1,0 +1,74 @@
+# Verificación de pull requests: comprueba que el proyecto compila y, cuando hay
+# credenciales, publica una vista previa en un canal temporal de tfemfdev.
+name: Verificar pull request
+
+on:
+  pull_request:
+    branches:
+      - master
+      - staging
+      - dev
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Compilar y publicar vista previa
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # Los PR que vienen de un fork NO reciben los secrets del repositorio.
+      # Para comprobar que el proyecto compila basta una configuración de
+      # relleno: este build solo se despliega si hay credenciales de verdad.
+      - name: Generar src/environments/environment.ts
+        env:
+          CONFIG_SECRETO: ${{ secrets.FIREBASE_CONFIG_STAGING }}
+        run: |
+          if [ -n "$CONFIG_SECRETO" ]; then
+            echo 'Usando FIREBASE_CONFIG_STAGING.'
+            export FIREBASE_CONFIG="$CONFIG_SECRETO"
+          else
+            echo 'Sin secrets disponibles (PR desde un fork): configuración de relleno.'
+            export FIREBASE_CONFIG="$(cat .github/firebase-config-relleno.json)"
+          fi
+          node scripts/generar-environment.mjs
+
+      - name: Compilar
+        run: npx ng build --configuration production
+
+      # 'secrets' no se puede consultar directamente en un 'if', así que lo
+      # resolvemos en un paso previo.
+      - name: Comprobar credenciales de staging
+        id: credenciales
+        env:
+          CUENTA_SERVICIO: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TFEMFDEV }}
+          CONFIG_SECRETO: ${{ secrets.FIREBASE_CONFIG_STAGING }}
+        run: |
+          if [ -n "$CUENTA_SERVICIO" ] && [ -n "$CONFIG_SECRETO" ]; then
+            echo 'disponibles=si' >> "$GITHUB_OUTPUT"
+          else
+            echo 'disponibles=no' >> "$GITHUB_OUTPUT"
+            echo 'Sin credenciales de staging: se omite la vista previa.'
+          fi
+
+      - name: Publicar vista previa en tfemfdev
+        if: >-
+          steps.credenciales.outputs.disponibles == 'si' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TFEMFDEV }}
+          projectId: tfemfdev
+          expires: 7d

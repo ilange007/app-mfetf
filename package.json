@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "generar-environment": "node scripts/generar-environment.mjs"
   },
   "private": true,
   "dependencies": {

@@ -128,6 +128,13 @@ export const environment = {
 };
 ```
 
+Si prefieres no escribirlo a mano, el mismo generador que usa el CI sirve en local:
+
+```bash
+export FIREBASE_CONFIG='{"apiKey":"…","authDomain":"…","projectId":"…","appId":"…"}'
+npm run generar-environment
+```
+
 > **Nota.** Esta configuración **no es un secreto**: viaja dentro del JavaScript que descarga
 > cualquier visitante. Lo que protege los datos son las reglas de Firestore, no ocultar este archivo.
 > Aun así, mantenlo fuera del repositorio: así cada quien apunta al proyecto que le corresponde.
@@ -262,10 +269,10 @@ Ordenado por impacto. El detalle técnico de cada punto está en
 **🟠 Hace más fácil todo lo demás**
 
 3. Versionar `src/environments/environment.example.ts` para que el arranque en frío no sea un muro.
-4. Arreglar los workflows de GitHub Actions: les falta `setup-node` y `npm ci`, y apuntan a `main`
-   en vez de `dev`.
-5. Borrar el código muerto: `firesvc.service.ts`, los modelos de clínica/paciente/solicitud,
-   `app-routing.module.ts`, y el bloque de jQuery y Bootstrap 3 de `index.html`.
+4. **Borrar el código muerto**: `firesvc.service.ts`, los modelos de clínica/paciente/solicitud,
+   `app-routing.module.ts`, y el bloque de jQuery y Bootstrap 3 de `index.html`. Lo primero de esa
+   lista además **desbloquea los tests**: hoy `ng test` ni siquiera compila por su culpa, y por eso
+   el CI todavía no los ejecuta.
 
 **🟡 Buenos primeros aportes**
 
@@ -288,15 +295,29 @@ responder](docs/arquitectura.md#16-preguntas-abiertas-para-el-equipo))*
 
 ## Despliegue
 
-Hoy es **manual** (el CI está roto, punto 4 de arriba):
+Automático, con **dos entornos**:
+
+| Haces merge a… | Se despliega a… | Proyecto Firebase |
+|---|---|---|
+| `master` | **Producción** | `tfemf-839ad` |
+| `staging` | **Staging** | `tfemfdev` |
+| *(cualquier PR)* | Vista previa temporal (7 días) | `tfemfdev` |
+
+Trabaja contra `staging` y deja `master` para lo que ya esté probado.
+
+El CI compila con `npm ci` + `ng build` y genera `src/environments/environment.ts` a partir de los
+secrets del repositorio antes de compilar. Los PR que vienen de un fork no reciben secrets: en ese
+caso se compila con una configuración de relleno solo para verificar que el proyecto compila, y no
+se publica vista previa.
+
+Si necesitas desplegar a mano:
 
 ```bash
 npm run build
-npx firebase deploy --only hosting          # app
-npx firebase deploy --only firestore:rules  # reglas de seguridad
+npx firebase deploy --only hosting -P produccion   # o -P staging
 ```
 
-Proyecto Firebase: **`tfemf-839ad`**. Salida del build: `dist/app-mfetf/browser`.
+Detalle completo en [`docs/arquitectura.md` §11.2](docs/arquitectura.md#112-entornos-y-despliegue-continuo).
 
 ---
 
