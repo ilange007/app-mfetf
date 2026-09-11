@@ -1,0 +1,48 @@
+# Staging: merge a staging → despliega a tfemfdev
+#
+# Secrets necesarios (Settings → Secrets and variables → Actions):
+#   FIREBASE_CONFIG_STAGING            JSON de configuración web de Firebase
+#   FIREBASE_SERVICE_ACCOUNT_TFEMFDEV  clave de cuenta de servicio
+name: Desplegar a staging
+
+on:
+  push:
+    branches:
+      - staging
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    name: Build y deploy a tfemfdev
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # Sin --production: es el mismo build optimizado, pero environment.production
+      # queda en false para que la app pueda distinguir el entorno.
+      - name: Generar src/environments/environment.ts
+        env:
+          FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG_STAGING }}
+        run: node scripts/generar-environment.mjs
+
+      - name: Compilar
+        run: npx ng build --configuration production
+
+      - name: Desplegar a Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TFEMFDEV }}
+          channelId: live
+          projectId: tfemfdev

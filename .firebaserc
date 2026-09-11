@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "tfemf-839ad"
+    "default": "tfemf-839ad",
+    "produccion": "tfemf-839ad",
+    "staging": "tfemfdev"
   }
 }
