@@ -731,7 +731,7 @@ Tampoco hay *lint* (no está configurado `@angular-eslint`) ni despliegue autom�
 
 | Pieza | Versión | Nota |
 |---|---|---|
-| Node | ^18.19 · ^20.11 · ^22 | Exigido por Angular 18. Verificado con **v22**. |
+| Node | ^18.19 · ^20.11 · ^22 | Exigido por Angular 18. CI y desarrollo usan **22**: Node 20 pasó a fin de soporte en abril de 2026. |
 | Angular | 18.2 | |
 | `@angular/fire` | 18.0 | |
 | Firebase SDK | 10.14 | |
